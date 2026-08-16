@@ -1,5 +1,4 @@
 import allure
-from selenium.webdriver.support.ui import WebDriverWait
 
 from constants import BASE_URL, ORDER_TIMEOUT
 from locators import FeedPageLocators
@@ -16,6 +15,11 @@ class FeedPage(BasePage):
         self.visible(FeedPageLocators.TOTAL_COUNTER)
         return self
 
+    def is_opened(self):
+        return self.is_current_url(self.URL) and self.is_visible(
+            FeedPageLocators.PAGE_TITLE
+        )
+
     def total_counter(self):
         return int(self.text(FeedPageLocators.TOTAL_COUNTER).replace(" ", ""))
 
@@ -24,30 +28,32 @@ class FeedPage(BasePage):
 
     @allure.step("Дождаться увеличения счётчика за всё время")
     def wait_total_counter_greater_than(self, previous_value):
-        return WebDriverWait(self.driver, ORDER_TIMEOUT).until(
-            lambda _: (
+        return self.wait_for(
+            lambda: (
                 current
                 if (current := self.total_counter()) > previous_value
                 else False
-            )
+            ),
+            ORDER_TIMEOUT,
         )
 
     @allure.step("Дождаться увеличения счётчика за сегодня")
     def wait_today_counter_greater_than(self, previous_value):
-        return WebDriverWait(self.driver, ORDER_TIMEOUT).until(
-            lambda _: (
+        return self.wait_for(
+            lambda: (
                 current
                 if (current := self.today_counter()) > previous_value
                 else False
-            )
+            ),
+            ORDER_TIMEOUT,
         )
 
     @allure.step("Дождаться номера заказа в разделе «В работе»")
     def wait_order_in_progress(self, order_number):
         expected = str(order_number).zfill(7)
 
-        def order_is_visible(_):
+        def order_is_visible():
             text = self.visible(FeedPageLocators.IN_PROGRESS_LIST).text
             return expected in text or str(order_number) in text.split()
 
-        return WebDriverWait(self.driver, ORDER_TIMEOUT).until(order_is_visible)
+        return self.wait_for(order_is_visible, ORDER_TIMEOUT)

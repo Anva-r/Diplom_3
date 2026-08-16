@@ -12,6 +12,26 @@ class BasePage:
         self.driver = driver
         self.wait = WebDriverWait(driver, timeout)
 
+    def as_page(self, page_class):
+        return page_class(self.driver)
+
+    def wait_for(self, condition, timeout=DEFAULT_TIMEOUT):
+        return WebDriverWait(self.driver, timeout).until(lambda _: condition())
+
+    def find_elements(self, locator):
+        return self.driver.find_elements(*locator)
+
+    def visible_texts(self, locator):
+        return [
+            element.text.strip()
+            for element in self.find_elements(locator)
+            if element.is_displayed()
+        ]
+
+    def child_text(self, parent_locator, child_locator):
+        parent = self.visible(parent_locator)
+        return parent.find_element(*child_locator).text
+
     @allure.step("Открыть страницу {url}")
     def open_url(self, url):
         self.driver.get(url)
@@ -45,12 +65,11 @@ class BasePage:
     def wait_invisible(self, locator):
         return self.wait.until(conditions.invisibility_of_element_located(locator))
 
-    def wait_no_visible_elements(self, locator):
-        return self.wait.until(
-            lambda driver: not any(
-                element.is_displayed() for element in driver.find_elements(*locator)
-            )
-        )
+    def no_visible_elements(self, locator):
+        return not any(element.is_displayed() for element in self.find_elements(locator))
+
+    def wait_no_visible_elements(self, locator, timeout=DEFAULT_TIMEOUT):
+        return self.wait_for(lambda: self.no_visible_elements(locator), timeout)
 
     @allure.step("Закрыть видимое модальное окно")
     def close_visible_modal(self, locator):
@@ -103,6 +122,9 @@ class BasePage:
 
     def wait_url(self, expected_url):
         self.wait.until(conditions.url_to_be(expected_url))
+
+    def is_current_url(self, expected_url):
+        return self.current_url == expected_url
 
     @property
     def current_url(self):

@@ -1,7 +1,5 @@
 import allure
 
-from constants import BASE_URL
-from locators import FeedPageLocators, MainPageLocators
 from pages.feed_page import FeedPage
 from pages.main_page import MainPage
 
@@ -12,20 +10,20 @@ class TestMainPage:
     @allure.title("Переход в конструктор по ссылке в шапке")
     def test_constructor_link_opens_main_page(self, driver):
         FeedPage(driver).open()
+        main_page = MainPage(driver)
 
-        MainPage(driver).click_constructor()
+        main_page.click_constructor()
 
-        assert driver.current_url == f"{BASE_URL}/"
-        assert MainPage(driver).is_visible(MainPageLocators.PAGE_TITLE)
+        assert main_page.is_opened()
 
     @allure.title("Переход в ленту заказов по ссылке в шапке")
     def test_feed_link_opens_order_feed(self, driver):
         main_page = MainPage(driver).open()
+        feed_page = FeedPage(driver)
 
         main_page.click_feed()
 
-        assert driver.current_url == f"{BASE_URL}/feed"
-        assert FeedPage(driver).is_visible(FeedPageLocators.PAGE_TITLE)
+        assert feed_page.is_opened()
 
     @allure.title("Клик по ингредиенту открывает окно с деталями")
     def test_ingredient_click_opens_details_modal(self, driver):
@@ -42,13 +40,13 @@ class TestMainPage:
 
         main_page.close_modal()
 
-        assert not main_page.ingredient_modal_is_open()
+        assert main_page.ingredient_modal_is_closed()
 
     @allure.title("При добавлении ингредиента его счётчик увеличивается")
     def test_ingredient_counter_increases_after_drag(self, driver):
         main_page = MainPage(driver).open()
-        before = main_page.ingredient_counter(MainPageLocators.SAUCE_CARD)
+        before = main_page.sauce_counter()
 
-        after = main_page.add_ingredient(MainPageLocators.SAUCE_CARD)
+        after = main_page.add_sauce()
 
         assert after > before
